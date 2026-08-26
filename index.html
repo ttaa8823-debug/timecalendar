@@ -876,7 +876,7 @@ if (!firebaseConfig || !firebaseConfig.apiKey) {
       if (c.includes('user-not-found')) return 'アカウントが見つかりません。新規登録してください。';
       if (c.includes('network-request-failed')) return '通信エラーです。電波状況を確認してください。';
       if (c.includes('too-many-requests')) return '試行回数が多すぎます。しばらくしてからお試しください。';
-      return '同期エラー: ' + c + ' | KEY=[' + firebaseConfig.apiKey + ']';
+      return '同期エラー: ' + c + ' | LEN=' + firebaseConfig.apiKey.length + ' FIRST2=' + firebaseConfig.apiKey.slice(0,2) + ' LAST2=' + firebaseConfig.apiKey.slice(-2);
     }
   } catch (e) {
     console.error(e);
