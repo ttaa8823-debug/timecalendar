@@ -1,5 +1,5 @@
 export const firebaseConfig = {
-  apiKey: "AIzaSyDn•••••••••••••••••••••••••••••••",
+  apiKey: "AIzaSyDn•••••••••••••••••••••••••••••EM",
   authDomain: "timecalendar-b00c7.firebaseapp.com",
   projectId: "timecalendar-b00c7",
   storageBucket: "timecalendar-b00c7.firebasestorage.app",
