@@ -1,6 +1,6 @@
 // タイムカレンダー PWA Service Worker
 // キャッシュのバージョンを上げると、ユーザーの端末でアプリが自動更新されます。
-const CACHE_VERSION = 'timecal-v2';
+const CACHE_VERSION = 'timecal-v3';
 const APP_SHELL = [
   './',
   './index.html',

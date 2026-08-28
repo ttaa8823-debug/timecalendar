@@ -413,22 +413,62 @@ function bindPaint() {
   });
   list.addEventListener('mouseover', ev => {
     if (!dragging) return;
+    if (!(ev.buttons & 1)) { endPaint(); return; }
     const row = ev.target.closest('.tl-slot'); if (!row) return;
     applyPaint(parseInt(row.dataset.i, 10));
   });
+
+  // タッチ操作: 長押し（220ms）してから塗り始める。それより前に指が動いたら
+  // 「スクロールしたいだけ」とみなして何もしない（誤入力防止）。
+  const LONG_PRESS_MS = 220;
+  const MOVE_CANCEL_PX = 10;
+  let touchTimer = null, touchStartX = 0, touchStartY = 0, touchStartI = null, touchPainting = false, touchCancelled = false;
+
   list.addEventListener('touchstart', ev => {
     const row = ev.target.closest('.tl-slot'); if (!row) return;
-    startPaint(parseInt(row.dataset.i, 10));
-  }, {passive:true});
-  list.addEventListener('touchmove', ev => {
-    if (!dragging) return;
     const t = ev.touches[0];
+    touchStartX = t.clientX; touchStartY = t.clientY;
+    touchStartI = parseInt(row.dataset.i, 10);
+    touchPainting = false;
+    touchCancelled = false;
+    clearTimeout(touchTimer);
+    touchTimer = setTimeout(() => {
+      touchPainting = true;
+      startPaint(touchStartI);
+    }, LONG_PRESS_MS);
+  }, {passive:true});
+
+  list.addEventListener('touchmove', ev => {
+    const t = ev.touches[0];
+    if (!touchPainting) {
+      const dx = Math.abs(t.clientX - touchStartX), dy = Math.abs(t.clientY - touchStartY);
+      if (dx > MOVE_CANCEL_PX || dy > MOVE_CANCEL_PX) { clearTimeout(touchTimer); touchTimer = null; touchCancelled = true; }
+      return;
+    }
     const el = document.elementFromPoint(t.clientX, t.clientY);
     const row = el && el.closest ? el.closest('.tl-slot') : null;
     if (row) { ev.preventDefault(); applyPaint(parseInt(row.dataset.i, 10)); }
   }, {passive:false});
+
+  list.addEventListener('touchend', () => {
+    clearTimeout(touchTimer);
+    if (touchPainting) {
+      endPaint();
+    } else if (touchStartI !== null && !touchCancelled) {
+      // 長押しに達しない短いタップ = その1コマだけ塗る
+      startPaint(touchStartI);
+      endPaint();
+    }
+    touchTimer = null; touchStartI = null; touchPainting = false; touchCancelled = false;
+  });
+  list.addEventListener('touchcancel', () => {
+    clearTimeout(touchTimer);
+    if (touchPainting) endPaint();
+    touchTimer = null; touchStartI = null; touchPainting = false; touchCancelled = false;
+  });
+
   document.addEventListener('mouseup', endPaint);
-  document.addEventListener('touchend', endPaint);
+  window.addEventListener('blur', endPaint);
 }
 
 function clickNote(i) {
@@ -876,7 +916,7 @@ if (!firebaseConfig || !firebaseConfig.apiKey) {
       if (c.includes('user-not-found')) return 'アカウントが見つかりません。新規登録してください。';
       if (c.includes('network-request-failed')) return '通信エラーです。電波状況を確認してください。';
       if (c.includes('too-many-requests')) return '試行回数が多すぎます。しばらくしてからお試しください。';
-      return '同期エラー: ' + c + ' | LEN=' + firebaseConfig.apiKey.length + ' FIRST2=' + firebaseConfig.apiKey.slice(0,2) + ' LAST2=' + firebaseConfig.apiKey.slice(-2);
+      return '同期エラー: ' + c;
     }
   } catch (e) {
     console.error(e);
