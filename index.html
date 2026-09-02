@@ -73,6 +73,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 .meal-inp{flex:1;height:24px;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--text);padding:0 7px;font-size:11px;font-family:inherit;min-width:0}
 .meal-inp:focus{outline:none;border-color:var(--teal)}
 
+/* 体重・体脂肪 */
+.health-sec{border-top:.5px solid var(--bd);padding:.65rem 1rem;flex-shrink:0}
+.health-row{display:flex;gap:10px}
+.health-item{flex:1;display:flex;align-items:center;gap:5px}
+.health-lbl{font-size:10px;color:var(--muted);flex-shrink:0}
+.health-inp{width:100%;min-width:0;height:24px;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--text);padding:0 6px;font-size:11px;text-align:right;font-family:inherit}
+.health-inp:focus{outline:none;border-color:var(--teal)}
+.health-unit{font-size:10px;color:var(--muted);flex-shrink:0}
+
 /* 支出 */
 .money-sec{border-top:.5px solid var(--bd);padding:.65rem 1rem;flex-shrink:0}
 .sec-label{font-size:11px;font-weight:500;color:var(--muted);margin-bottom:7px;display:flex;align-items:center;gap:4px}
@@ -162,7 +171,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 .sy-msg.ok{color:#0F6E56}
 .sy-signout{width:100%;margin-top:6px;padding:5px;background:transparent;border:.5px solid var(--bd2);border-radius:var(--r);font-size:10px;color:var(--muted);cursor:pointer;font-family:inherit}
 .sy-signout:hover{background:var(--bg-card)}
-@media(max-width:720px){.layout{flex-direction:column-reverse}.sidebar{width:100%;height:auto;position:static}.cat-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:720px){.layout{flex-direction:column-reverse}.sidebar{width:100%;height:auto;position:static;overflow:visible}.pscroll{overflow-y:visible}.cat-grid{grid-template-columns:repeat(4,1fr)}.cat-sel{position:sticky;top:0;z-index:20;background:var(--bg-card);box-shadow:0 2px 6px rgba(0,0,0,.08)}}
 </style>
 </head>
 <body>
@@ -287,11 +296,13 @@ function slotTime(i){ return `${String(Math.floor(i/4)).padStart(2,'0')}:${Strin
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function entry(key) {
-  if (!DB[key]) DB[key] = {slots:{},expenses:[],meals:{},memo:'',mood:60};
+  if (!DB[key]) DB[key] = {slots:{},expenses:[],meals:{},memo:'',mood:60,weight:'',bodyFat:''};
   const e = DB[key];
   if (!e.slots) e.slots = {};
   if (!e.expenses) e.expenses = [];
   if (!e.meals) e.meals = {};
+  if (e.weight === undefined) e.weight = '';
+  if (e.bodyFat === undefined) e.bodyFat = '';
   return e;
 }
 
@@ -491,6 +502,13 @@ function updMeal(id, val) {
   save(); renderCal();
 }
 
+/* ── 体重・体脂肪 ── */
+function updHealth(field, val) {
+  if (!selDate) return;
+  entry(selDate)[field] = val;
+  save();
+}
+
 /* ── 支出明細 ── */
 function addExp() {
   if (!selDate) return;
@@ -617,6 +635,23 @@ function renderForms() {
       <div class="meal-lbl"><i class="ti ${m.icon}" style="font-size:11px"></i>${m.label}</div>
       <input class="meal-inp" type="text" placeholder="例）オートミール・卵・コーヒー" value="${esc(e.meals[m.id]||'')}" oninput="updMeal('${m.id}',this.value)">
     </div>`).join('')}
+  </div>`;
+
+  // 体重・体脂肪
+  html += `<div class="health-sec">
+    <div class="sec-label"><i class="ti ti-scale" style="font-size:11px"></i> 体重・体脂肪</div>
+    <div class="health-row">
+      <div class="health-item">
+        <span class="health-lbl">体重</span>
+        <input class="health-inp" type="number" step="0.1" min="0" placeholder="0.0" value="${esc(e.weight)}" oninput="updHealth('weight',this.value)">
+        <span class="health-unit">kg</span>
+      </div>
+      <div class="health-item">
+        <span class="health-lbl">体脂肪</span>
+        <input class="health-inp" type="number" step="0.1" min="0" max="100" placeholder="0.0" value="${esc(e.bodyFat)}" oninput="updHealth('bodyFat',this.value)">
+        <span class="health-unit">%</span>
+      </div>
+    </div>
   </div>`;
 
   // 支出明細
